@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Pokemon Team Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>Pokemon Team Builder</h1>
+        <div id="loading" class="loading-indicator">Loading Pokemon...</div>
+        <div id="pokemon-list-container">
+            <ul id="pokemon-list">
+            </ul>
+        </div>
+
+        <div id="team-container" class="hidden">
+            <h2>Your Team</h2>
+            <ul id="pokemon-team">
+            </ul>
+        </div>
+
+        <div id="team-summary" class="hidden">
+            <h2>Team Summary</h2>
+            <div id="team-summary-content">
+                <p>Total Pokemon: <span id="total-pokemon-count">0</span></p>
+            </div>
+        </div>
+        <div id="error-message" class="hidden"></div>
+    </div>
+
+    <script src="./index.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random User Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        #user-info-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        #generate-user-button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        #generate-user-button:hover {
+            background-color: #2980b9;
+        }
+
+        #user-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 350px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin: 0 auto;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #user-card:hover {
+            transform: translateY(-5px);
+        }
+
+        #user-card img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+
+        #user-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        #user-card p {
+            font-size: 1rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .loading-wave {
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 20px;
+        }
+
+        .loading-bar {
+            width: 20px;
+            height: 10px;
+            margin: 0 5px;
+            background-color: #3498db;
+            border-radius: 5px;
+            animation: loading-wave-animation 1s ease-in-out infinite;
+        }
+
+        @keyframes loading-wave-animation {
+            0% {
+                height: 10px;
+            }
+
+            50% {
+                height: 50px;
+            }
+
+            100% {
+                height: 10px;
+            }
+        }
+
+        #error-container {
+            color: red;
+            border: 1px solid red;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #ffe0e0;
+            width: fit-content;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .skeleton-card {
+            background-color: #fff;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 350px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .skeleton-avatar {
+            height: 150px;
+            width: 150px;
+            background-color: #ddd;
+            margin-bottom: 20px;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .skeleton-title {
+            height: 30px;
+            width: 80%;
+            background-color: #ddd;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            width: 90%;
+            background-color: #eee;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Random User Generator</h1>
+
+        <div id="user-info-container">
+            <button id="generate-user-button">Generate User</button>
+        </div>
+
+        <div id="user-card" style="display: none;">
+        </div>
+
+        <div id="loader" class="loading-wave" style="display: none;">
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+        </div>
+
+        <div id="error-container" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://randomuser.me/api/';
+
+        const DOM = {
+            generateUserButton: document.getElementById('generate-user-button'),
+            userCard: document.getElementById('user-card'),
+            loader: document.getElementById('loader'),
+            errorContainer: document.getElementById('error-container'),
+        };
+
+        /**
+         * Function to show the loading indicator.
+         */
+        function showLoader() {
+            DOM.loader.style.display = 'flex';
+        }
+
+        /**
+         * Function to hide the loading indicator.
+         */
+        function hideLoader() {
+            DOM.loader.style.display = 'none';
+        }
+
+        /**
+         * Function to display an error message.
+         */
+        function displayErrorMessage(message) {
+            const errorContainer = DOM.errorContainer;
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+
+        /**
+         * Function to hide the error message.
+         */
+        function hideErrorMessage() {
+            DOM.errorContainer.style.display = 'none';
+            DOM.errorContainer.textContent = '';
+        }
+
+        /**
+         * Function to fetch a random user from the Random User API.
+         * @returns {Promise<object>} - A promise that resolves with the user data.
+         */
+        async function fetchRandomUser() {
+            const response = await fetch(API_BASE_URL);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user data: ${response.status} - ${response.statusText}`);
+            }
+            const data = await response.json();
+            return data.results[0];
+        }
+
+        /**
+         * Function to display the user card in the UI.
+         * @param {object} user - The user data object.
+         */
+        function displayUserCard(user) {
+            const userCard = DOM.userCard;
+            userCard.innerHTML = ''; // Clear previous content
+            userCard.style.display = 'flex';
+
+            const avatar = document.createElement('img');
+            avatar.src = user.picture.large;
+            avatar.alt = 'User Avatar';
+
+            const name = document.createElement('h2');
+            name.textContent = `${user.name.first} ${user.name.last}`;
+
+            const email = document.createElement('p');
+            email.textContent = `Email: ${user.email}`;
+
+            const location = document.createElement('p');
+            location.textContent = `Location: ${user.location.city}, ${user.location.country}`;
+
+            const dob = document.createElement('p');
+            dob.textContent = `Date of Birth: ${new Date(user.dob.date).toLocaleDateString()}`;
+
+            userCard.appendChild(avatar);
+            userCard.appendChild(name);
+            userCard.appendChild(email);
+            userCard.appendChild(location);
+            userCard.appendChild(dob);
+        }
+
+        function displaySkeletonCard() {
+            const userCard = DOM.userCard;
+            userCard.innerHTML = '';
+            userCard.style.display = 'flex';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'skeleton-avatar';
+            const title = document.createElement('div');
+            title.className = 'skeleton-title';
+            const text1 = document.createElement('div');
+            text1.className = 'skeleton-text';
+            const text2 = document.createElement('div');
+            text2.className = 'skeleton-text';
+            const text3 = document.createElement('div');
+            text3.className = 'skeleton-text';
+
+            userCard.appendChild(avatar);
+            userCard.appendChild(title);
+            userCard.appendChild(text1);
+            userCard.appendChild(text2);
+            userCard.appendChild(text3);
+        }
+
+        /**
+         * Function to handle the button click and fetch/display a random user.
+         */
+        async function handleGenerateUser() {
+            showLoader();
+            displaySkeletonCard();
+            hideErrorMessage();
+
+            try {
+                const user = await fetchRandomUser();
+                displayUserCard(user);
+            } catch (error) {
+                displayErrorMessage(error.message);
+                DOM.userCard.style.display = 'none';
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Event listener for the generate user button
+        DOM.generateUserButton.addEventListener('click', handleGenerateUser);
+    </script>
+</body>
+
+</html>

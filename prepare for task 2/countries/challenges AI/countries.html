@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Details</title>
+    <style>
+        #content {
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #countryDetailsContent {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .country-card {
+            border: 1px solid #ccc;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .loader {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+
+        img {
+            max - width: 100%;
+            height: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+        <label for="countriesSelect" style="margin-right: 10px;">Select Countries:</label>
+        <select id="countriesSelect" multiple size="10" style="min-width: 200px;">
+        </select>
+    </div>
+
+    <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+        <button id="getSelectedCountries">Show Selected Countries Details</button>
+    </div>
+
+    <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+        <button id="buttonWithFailure">Show Selected (with Potential Failure)</button>
+    </div>
+
+    <div id="loader" class="loader">Loading countries...</div>
+
+    <div id="content">
+        <div id="countryDetailsContent">
+        </div>
+    </div>
+
+    <script>
+        const DOM = {
+            selectCountry: null,
+            loader: null,
+            button: null,
+            buttonWithFailure: null,
+            countryDetailsContent: null
+        };
+
+        function init() {
+            DOM.selectCountry = document.getElementById("countriesSelect");
+            DOM.loader = document.getElementById("loader");
+            DOM.button = document.getElementById("getSelectedCountries");
+            DOM.buttonWithFailure = document.getElementById("buttonWithFailure");
+            DOM.countryDetailsContent = document.getElementById("countryDetailsContent");
+
+            DOM.button.addEventListener("click", async function () {
+                const codes = Array.from(DOM.selectCountry.selectedOptions).map(optionHTML => optionHTML.value);
+                if (codes.length > 0) {
+                    showLoader();
+                    DOM.countryDetailsContent.innerHTML = ''; // Clear previous results
+                    const promises = codes.map(code => getCountryByCode(code));
+                    const results = await Promise.all(promises);
+                    results.forEach(country => drawCountryDetails(country));
+                    hideLoader();
+                } else {
+                    alert("Please select at least one country.");
+                }
+            });
+
+            DOM.buttonWithFailure.addEventListener("click", async function () {
+                const codes = [...Array.from(DOM.selectCountry.selectedOptions).map(optionHTML => optionHTML.value), "NOT_EXISTING_COUNTRY"];
+                showLoader();
+                DOM.countryDetailsContent.innerHTML = ''; // Clear previous results
+                const promises = codes.map(code => getCountryByCode(code));
+                const results = await Promise.allSettled(promises);
+                console.log(results);
+                const onlySucceededCountries = results.filter(item => item.status === "fulfilled").map(item => item.value);
+                onlySucceededCountries.forEach(country => drawCountryDetails(country));
+                hideLoader();
+            });
+
+            showCountriesNames();
+        }
+
+        function drawCountriesSelect(data) {
+            if (!Array.isArray(data)) return;
+            data.forEach((currentCountry) => {
+                const optionElement = `<option value='${currentCountry.cca3}'> ${currentCountry?.name?.common} </option>`;
+                DOM.selectCountry.innerHTML += optionElement;
+            });
+        }
+
+        async function showCountriesNames() {
+            try {
+                showLoader();
+                const result = await getCountriesApi();
+                drawCountriesSelect(result);
+            } catch (ex) {
+                console.error(ex);
+                alert("Failed to load country list.");
+            } finally {
+                hideLoader();
+                console.log("Country list loaded.");
+            }
+        }
+
+        async function getCountriesApi() {
+            const result = await new Promise((resolve) => setTimeout(async () => {
+                const res = await fetch(`https://restcountries.com/v3.1/all`);
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${result.status}`);
+                }
+                resolve(res)
+            }, 500));
+            const data = await result.json();
+            return data;
+        }
+
+        async function getCountryByCode(code) {
+            if (code === "NOT_EXISTING_COUNTRY") return Promise.reject("INVALID COUNTRY CODE");
+            const result = await fetch(`https://restcountries.com/v3.1/alpha/${code}`);
+            if (!result.ok) {
+                throw new Error(`HTTP error! status: ${result.status} for code: ${code}`);
+            }
+            const data = await result.json();
+            const [firstCountry] = data;
+
+            if (!firstCountry?.flags?.svg) {
+                return {
+                    name: firstCountry?.name?.official || 'Unknown',
+                    flag: 'no-flag.png', // Placeholder image if flag URL is missing
+                    svgText: ''
+                };
+            }
+
+            try {
+                const svgFlag = await fetch(firstCountry.flags.svg);
+                if (!svgFlag.ok) {
+                    console.warn(`Failed to fetch SVG flag for ${firstCountry?.name?.official}`);
+                    return {
+                        name: firstCountry?.name?.official || 'Unknown',
+                        flag: firstCountry?.flags?.png || 'no-flag.png', // Fallback to PNG
+                        svgText: ''
+                    };
+                }
+                const svgText = await svgFlag.text();
+                return {
+                    name: firstCountry?.name?.official || 'Unknown',
+                    flag: firstCountry?.flags?.svg,
+                    svgText
+                };
+            } catch (error) {
+                console.error(`Error fetching SVG flag for ${firstCountry?.name?.official}:`, error);
+                return {
+                    name: firstCountry?.name?.official || 'Unknown',
+                    flag: firstCountry?.flags?.png || 'no-flag.png', // Fallback to PNG
+                    svgText: ''
+                };
+            }
+        }
+
+        function drawCountryDetails(country) {
+            const countryCard = document.createElement('div');
+            countryCard.classList.add('country-card');
+            countryCard.innerHTML = `
+                        <h3>${country.name}</h3>
+                        <img src="${country.flag}" alt="${country.name} flag" height="100" />
+                        ${country.svgText ? `<div style="display:none;">${country.svgText}</div>` : ''}
+                        `;
+            DOM.countryDetailsContent.appendChild(countryCard);
+        }
+
+        function showLoader() {
+            DOM.loader.style.display = "flex";
+        }
+
+        function hideLoader() {
+            DOM.loader.style.display = "none";
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

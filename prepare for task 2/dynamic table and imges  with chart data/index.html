@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Data Table</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css@0.9.0/dist/charts.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Dynamic Data Table</h1>
+        <a href="#favorites-section">Go to Favorites</a>
+        <div id="error-container" style="display: none;"></div>
+        <div id="loader" style="display: none;" class="loading-wave">
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+        </div>
+
+        <table id="data-table" class="sk-loading">
+            <thead>
+                <tr></tr>
+            </thead>
+            <tbody>
+                <tr></tr>
+                <tr></tr>
+            </tbody>
+        </table>
+
+        <div id="chart-container" class="sk-loading">
+            <canvas id="myChart"></canvas>
+        </div>
+
+        <h2 id="favorites-section">Favorites</h2>
+        <ul id="favorites-list"></ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./index.js"></script>
+
+</body>
+
+</html>

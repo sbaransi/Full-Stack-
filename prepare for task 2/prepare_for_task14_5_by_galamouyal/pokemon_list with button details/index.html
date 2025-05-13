@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Ability Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #dc2626;
+            /* Pokemon Red Color */
+            margin-bottom: 2rem;
+        }
+
+        #pokemon-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            /* For rounded corners of the table */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #pokemon-table thead th {
+            background-color: #f87171;
+            /* Lighter red for header */
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ef4444;
+            /* Darker red border */
+        }
+
+        #pokemon-table tbody tr:nth-child(odd) {
+            background-color: #fecaca;
+            /* Very light red for odd rows */
+        }
+
+        #pokemon-table tbody tr:nth-child(even) {
+            background-color: #fff;
+            /* White for even rows */
+        }
+
+        #pokemon-table tbody tr:hover {
+            background-color: #ffe5e5;
+            /* Slightly lighter red on hover */
+        }
+
+        #pokemon-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        #pokemon-table td img {
+            width: 50px;
+            /* Increased size for better visibility */
+            height: auto;
+            border-radius: 50%;
+            /* Make it round */
+            margin-right: 0.5rem;
+            vertical-align: middle;
+            /* Align image vertically with text */
+            border: 2px solid #fca5a5;
+            /* Add a border around the image */
+        }
+
+        #pokemon-table .ability-name {
+            cursor: pointer;
+            color: #3b82f6;
+            /* Blue color for clickable names */
+            text-decoration: none;
+            font-weight: 500;
+            /* Make the name bold */
+        }
+
+        #pokemon-table .ability-name:hover {
+            color: #2563eb;
+            /* Darker blue on hover */
+            text-decoration: underline;
+            /* Underline on hover */
+        }
+
+        #pokemon-table .details-button {
+            padding: 0.5rem 1rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #pokemon-table .details-button:hover {
+            background-color: #2563eb;
+        }
+
+        #ability-details {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: none;
+            /* Initially hidden */
+        }
+
+        #ability-details h2 {
+            color: #dc2626;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        #ability-details p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            /* Improved readability */
+        }
+
+        #ability-details .flavor-text {
+            margin-bottom: 1.25rem;
+            padding: 0.75rem;
+            background-color: #fef0f0;
+            /* Very light red background for flavor texts */
+            border-radius: 0.375rem;
+            border: 1px solid #fecaca;
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+
+        #error-message {
+            color: #dc2626;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background-color: #fee2e2;
+            border-radius: 0.375rem;
+            border: 1px solid #fecaca;
+            display: none;
+        }
+
+        .loading-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            font-size: 1.2rem;
+            color: #4a5568;
+            display: none;
+        }
+
+        .loading-indicator.show {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Pokemon Abilities</h1>
+        <div id="loading" class="loading-indicator">Loading abilities...</div>
+        <div id="error-message" class="hidden"></div>
+        <table id="pokemon-table" class="hidden">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Ability Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div id="ability-details" class="hidden">
+            <h2>Ability Details</h2>
+            <div id="ability-flavor-texts">
+            </div>
+        </div>
+    </div>
+    <script>
+        const BASE_URL = 'https://pokeapi.co/api/v2';
+
+        const DOM = {
+            pokemonTable: null,
+            abilityDetails: null,
+            loadingIndicator: null,
+            errorMessage: null,
+        };
+
+        // Updated Pokemon Image URLs - using PokeAPI's sprite endpoint.
+        const pokemonImages = {
+            'overgrow': `${BASE_URL}/pokemon/1/`,       // Bulbasaur
+            'chlorophyll': `${BASE_URL}/pokemon/3/`,    // Venusaur
+            'torrent': `${BASE_URL}/pokemon/7/`,         // Squirtle
+            'rain-dish': `${BASE_URL}/pokemon/9/`,      // Blastoise
+            'blaze': `${BASE_URL}/pokemon/4/`,           // Charmander
+            'solar-power': `${BASE_URL}/pokemon/6/`,    // Charizard
+            'shield-dust': `${BASE_URL}/pokemon/10/`,    // Caterpie
+            'run-away': `${BASE_URL}/pokemon/13/`,       // Weedle
+            'shed-skin': `${BASE_URL}/pokemon/14/`,      // Kakuna
+            'compound-eyes': `${BASE_URL}/pokemon/15/`,  // Beedrill
+            'tinted-lens': `${BASE_URL}/pokemon/41/`,    // Zubat
+            'swarm': `${BASE_URL}/pokemon/43/`,          // Oddish
+            'sniper': `${BASE_URL}/pokemon/44/`,         // Gloom
+            'keen-eye': `${BASE_URL}/pokemon/16/`,       // Pidgey
+            'tangled-feet': `${BASE_URL}/pokemon/17/`,   // Pidgeotto
+            'guts': `${BASE_URL}/pokemon/19/`,            // Rattata
+            'vital-spirit': `${BASE_URL}/pokemon/26/`,    // Raichu
+            'anger-point': `${BASE_URL}/pokemon/128/`,   // Tauros
+            'limber': `${BASE_URL}/pokemon/52/`,          // Meowth
+            'technician': `${BASE_URL}/pokemon/108/`,    // Lickitung
+        };
+
+        function init() {
+            DOM.pokemonTable = document.getElementById('pokemon-table');
+            DOM.abilityDetails = document.getElementById('ability-details');
+            DOM.loadingIndicator = document.getElementById('loading');
+            DOM.errorMessage = document.getElementById('error-message');
+
+            fetchAbilities();
+        }
+
+        async function fetchAbilities() {
+            showLoading();
+            try {
+                const response = await fetch(`${BASE_URL}/ability/?limit=20&offset=20`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch abilities: ${response.status}`);
+                }
+                const data = await response.json();
+                displayAbilities(data.results);
+                hideLoading();
+            } catch (error) {
+                displayErrorMessage(error.message);
+                hideLoading();
+            }
+        }
+
+        async function getPokemonImageUrl(pokemonUrl) {
+            try {
+                const response = await fetch(pokemonUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch Pokemon data: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.sprites.front_default; // Get the URL of the default front sprite.
+            } catch (error) {
+                console.error("Error fetching Pokemon image:", error);
+                return `https://via.placeholder.com/50?text=Poke`; // Return placeholder if fetch fails.
+            }
+        }
+
+        async function displayAbilities(abilities) {
+            const tbody = DOM.pokemonTable.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            for (const ability of abilities) { // Use a for...of loop for sequential async operations.
+                const row = document.createElement('tr');
+                const abilityName = ability.name;
+                let imageUrl = pokemonImages[abilityName];
+
+                if (!imageUrl) {
+                    imageUrl = `https://via.placeholder.com/50?text=${abilityName.slice(0, 3)}`;
+                }
+                else {
+                    imageUrl = await getPokemonImageUrl(imageUrl);
+                }
+                row.innerHTML = `
+                    <td><img src="${imageUrl}" alt="${abilityName} icon"></td>
+                    <td><a href="#" class="ability-name" data-url="${ability.url}">${abilityName}</a></td>
+                    <td><button class="details-button" data-url="${ability.url}">View Details</button></td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            DOM.pokemonTable.classList.remove('hidden');
+
+            // Attach event listeners to the "View Details" buttons *after* they are added to the DOM
+            const detailButtons = DOM.pokemonTable.querySelectorAll('.details-button');  // Select buttons within the table.
+            detailButtons.forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const url = event.target.dataset.url;
+                    fetchAbilityDetails(url);
+                });
+            });
+
+            const abilityNameLinks = DOM.pokemonTable.querySelectorAll('.ability-name'); // Select links within the table
+            abilityNameLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    const url = event.target.dataset.url;
+                    fetchAbilityDetails(url);
+                });
+            });
+        }
+
+        async function fetchAbilityDetails(url) {
+            showLoading();
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ability details: ${response.status}`);
+                }
+                const data = await response.json();
+                displayAbilityDetails(data);
+                hideLoading();
+            } catch (error) {
+                displayErrorMessage(error.message);
+                hideLoading();
+            }
+        }
+
+        function displayAbilityDetails(ability) {
+            const flavorTextEntriesDiv = DOM.abilityDetails.querySelector('#ability-flavor-texts');
+            flavorTextEntriesDiv.innerHTML = '';
+
+            const uniqueTexts = new Set();
+            ability.flavor_text_entries.forEach(entry => {
+                const text = entry.flavor_text;
+                if (!uniqueTexts.has(text)) {
+                    uniqueTexts.add(text);
+                    const flavorTextPara = document.createElement('p');
+                    flavorTextPara.className = 'flavor-text';
+                    flavorTextPara.textContent = text;
+                    flavorTextEntriesDiv.appendChild(flavorTextPara);
+                }
+            });
+
+            DOM.abilityDetails.classList.remove('hidden');
+            DOM.abilityDetails.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showLoading() {
+            DOM.loadingIndicator.classList.add('show');
+            DOM.errorMessage.classList.add('hidden');
+            DOM.pokemonTable.classList.add('hidden');
+            DOM.abilityDetails.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            DOM.loadingIndicator.classList.remove('show');
+        }
+
+        function displayErrorMessage(message) {
+            DOM.errorMessage.textContent = message;
+            DOM.errorMessage.classList.remove('hidden');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

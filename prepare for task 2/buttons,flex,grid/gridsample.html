@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+   <!-- Good for Flexbox -->
+<nav style="display: flex; justify-content: space-between;">
+    <a href="#">Home</a>
+    <a href="#">About</a>
+    <a href="#">Contact</a>
+</nav> 
+
+
+
+<!-- Better with Grid -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr);">
+    <div>Item 1</div>
+    <div>Item 2</div>
+    <div>Item 3</div>
+    <div>Item 4</div>
+    <div>Item 5</div>
+    <div>Item 6</div>
+</div>
+
+
+<!-- Page Layout combining both -->
+<div style="display: grid; grid-template-columns: 200px 1fr;">
+    <!-- Sidebar: Flexbox for vertical menu -->
+    <nav style="display: flex; flex-direction: column;">
+        <a href="#">Menu 1</a>
+        <a href="#">Menu 2</a>
+    </nav>
+    
+    <!-- Main content: Grid for card layout -->
+    <!-- <main style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div>Card 1</div>
+        <div>Card 2</div>
+    </main> -->
+</div>
+</body>
+</html>

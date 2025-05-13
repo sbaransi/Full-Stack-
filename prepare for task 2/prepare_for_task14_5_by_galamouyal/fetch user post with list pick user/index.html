@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex Data Integration Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e3a8a;
+            margin-bottom: 2rem;
+        }
+
+        #data-display {
+            margin-top: 2rem;
+        }
+
+        #user-posts {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #user-posts li {
+            background-color: #edf2f7;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+            color: #718096;
+            border: 1px solid #e2e8f0;
+        }
+
+        #user-posts li strong {
+            color: #1e3a8a;
+        }
+
+        #error-message {
+            color: #dc2626;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background-color: #fee2e2;
+            border-radius: 0.375rem;
+            border: 1px solid #fecaca;
+            display: none;
+        }
+
+        .loading-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            font-size: 1.2rem;
+            color: #4a5568;
+            display: none;
+        }
+
+        .loading-indicator.show {
+            display: flex;
+        }
+
+        #fetch-data-button {
+            display: block;
+            margin: 2rem auto;
+            padding: 0.75rem 1.5rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #fetch-data-button:hover {
+            background-color: #45a049;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #user-select {
+            margin-left: 1rem;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #e2e8f0;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #data-controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>User Posts and Comments</h1>
+        <div id="data-controls">
+            <button id="fetch-data-button">Fetch Data</button>
+            <select id="user-select" class="hidden">
+                <option value="">Select a User</option>
+            </select>
+        </div>
+        <div id="loading" class="loading-indicator">Loading data...</div>
+        <div id="error-message" class="hidden"></div>
+        <div id="data-display" class="hidden">
+            <h2>Posts:</h2>
+            <ul id="user-posts">
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://jsonplaceholder.typicode.com';
+
+        const DOM = {
+            fetchDataButton: null,
+            loadingIndicator: null,
+            errorMessage: null,
+            dataDisplay: null,
+            userPostsList: null,
+            userSelect: null
+        };
+
+        function init() {
+            DOM.fetchDataButton = document.getElementById('fetch-data-button');
+            DOM.loadingIndicator = document.getElementById('loading');
+            DOM.errorMessage = document.getElementById('error-message');
+            DOM.dataDisplay = document.getElementById('data-display');
+            DOM.userPostsList = document.getElementById('user-posts');
+            DOM.userSelect = document.getElementById('user-select');
+
+            DOM.fetchDataButton.addEventListener('click', fetchData);
+            DOM.userSelect.addEventListener('change', displayUserPosts);
+        }
+
+        async function fetchData() {
+            showLoading();
+            try {
+                const usersResponse = await fetch(`${BASE_URL}/users`);
+                if (!usersResponse.ok) {
+                    throw new Error(`Failed to fetch users: ${usersResponse.status}`);
+                }
+                const users = await usersResponse.json();
+
+                populateUserSelect(users);
+                hideLoading();
+            } catch (error) {
+                displayErrorMessage(error.message);
+                hideLoading();
+            }
+        }
+
+        function populateUserSelect(users) {
+            DOM.userSelect.innerHTML = '<option value="">Select a User</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                DOM.userSelect.appendChild(option);
+            });
+            DOM.userSelect.classList.remove('hidden');
+        }
+
+        async function displayUserPosts() {
+            const userId = DOM.userSelect.value;
+            if (!userId) {
+                DOM.userPostsList.innerHTML = '';
+                DOM.dataDisplay.classList.add('hidden');
+                return;
+            }
+
+            showLoading();
+            try {
+                const postsResponse = await fetch(`${BASE_URL}/posts?userId=${userId}`);
+                if (!postsResponse.ok) {
+                    throw new Error(`Failed to fetch posts: ${postsResponse.status}`);
+                }
+                const posts = await postsResponse.json();
+
+                const enrichedPosts = await getPostsWithComments(posts);
+                displayPosts(enrichedPosts);
+                hideLoading();
+            } catch (error) {
+                displayErrorMessage(error.message);
+                hideLoading();
+            }
+        }
+
+        async function getPostsWithComments(posts) {
+            const enrichedPosts = [];
+            for (const post of posts) {
+                try {
+                    const commentsResponse = await fetch(`${BASE_URL}/comments?postId=${post.id}`);
+                    if (!commentsResponse.ok) {
+                        throw new Error(`Failed to fetch comments for post ${post.id}: ${commentsResponse.status}`);
+                    }
+                    const comments = await commentsResponse.json();
+                    enrichedPosts.push({ ...post, comments });
+                } catch (error) {
+                    console.error(`Error fetching comments for post ${post.id}:`, error);
+                    enrichedPosts.push({ ...post, comments: [] });
+                }
+            }
+            return enrichedPosts;
+        }
+
+        function displayPosts(posts) {
+            DOM.userPostsList.innerHTML = '';
+            posts.forEach(post => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <strong>${post.title}</strong><br>
+                    ${post.body}<br>
+                    <p>Comments:</p>
+                    ${post.comments.map(comment => `<p>- ${comment.name}: ${comment.body}</p>`).join('')}
+                `;
+                DOM.userPostsList.appendChild(listItem);
+            });
+            DOM.dataDisplay.classList.remove('hidden');
+        }
+
+        function showLoading() {
+            DOM.loadingIndicator.classList.add('show');
+            DOM.errorMessage.classList.add('hidden');
+            DOM.dataDisplay.classList.add('hidden');
+            DOM.userSelect.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            DOM.loadingIndicator.classList.remove('show');
+        }
+
+        function displayErrorMessage(message) {
+            DOM.errorMessage.textContent = message;
+            DOM.errorMessage.classList.remove('hidden');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

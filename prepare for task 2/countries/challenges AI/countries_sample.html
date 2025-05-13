@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countries</title>
+</head>
+
+<body>
+    <h2>Get Countries</h2>
+    <div>
+        <div style="display:flex; justify-content:center;margin-bottom:20px">
+            <label for="countriesSelect" style="margin-right:20px">Choose a country:</label>
+            <select id="countriesSelect" value="" multiple size="5" style="min-width:200px">Select a country</select>
+        </div>
+
+        <div style="display:flex; justify-content:center; margin-bottom:20px">
+            <button id="buttonSelect">Countries Button</button>
+        </div>
+        <div id="loader" style="display:none; justify-content:center; margin-bottom:20px">Loading Countries ...</div>
+
+        <div id="content" style="display:flex; justify-content:center;width: 80%;">
+            <div id="containerCountries"></div>
+        </div>
+    </div>
+
+    <script>
+        const Dom = {
+            countriesSelect: null,
+            buttonSelect: null,
+            loader: null,
+            containerCountries: null,
+        };
+
+        function init() {
+            Dom.countriesSelect = document.getElementById("countriesSelect");
+            Dom.buttonSelect = document.getElementById("buttonSelect");
+            Dom.loader = document.getElementById("loader");
+            Dom.containerCountries = document.getElementById("containerCountries");
+
+            Dom.buttonSelect.addEventListener('click', async () => {
+                const codes = Array.from(Dom.countriesSelect.selectedOptions).map(option => option.value);
+                console.log(codes)
+                if (codes.length > 0) {
+                    showLoader();
+                    Dom.containerCountries.innerHTML = "";
+                    const promises = codes.map(code => getCountriesByCode(code));
+                    const results = await Promise.all(promises);
+                    results.forEach(countryData => drawCountries(countryData[0])); // Assuming API returns an array
+                    hideLoader();
+                } else {
+                    alert("Please select at least one country.");
+                }
+            });
+
+            showCountriesMultiSelect();
+        }
+
+        async function showCountriesMultiSelect() {
+            const countriesData = await getApi();
+            drawCountriesSelect(countriesData);
+        }
+
+        async function getApi() {
+            const response = await fetch(`https://restcountries.com/v3.1/all`);
+            const data = await response.json();
+            return data;
+        }
+
+
+        async function getCountriesByCode(code) {
+
+            const data = await fetch(`https://restcountries.com/v3.1/alpha/${code}`)
+            const results = await data.json()
+            return results
+        }
+
+        function drawCountriesSelect(countries) {
+            if (!Array.isArray(countries)) return;
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.cca3;
+                option.textContent = country.name.common;
+                Dom.countriesSelect.appendChild(option);
+            });
+        }
+
+        function drawCountries(country) {
+            const countryDiv = document.createElement('div');
+            countryDiv.innerHTML = `
+                <h3 h3 > ${country.name.common}</h3 >
+                <p>Capital: ${country.capital ? country.capital.join(', ') : 'N/A'}</p>
+                <p>Population: ${country.population.toLocaleString()}</p>
+                <p>Region: ${country.region}</p>
+                <p>Subregion: ${country.subregion || 'N/A'}</p>
+                <img src="${country.flags.png}" alt="${country.name.common}">
+                <hr>
+            `;
+            Dom.containerCountries.appendChild(countryDiv);
+        }
+
+        function showLoader() {
+            Dom.loader.style.display = 'flex';
+        }
+
+        function hideLoader() {
+            Dom.loader.style.display = 'none';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

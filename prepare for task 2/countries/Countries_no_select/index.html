@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST Countries API Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        #country-list-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .country-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease-in-out;
+            text-align: center;
+        }
+
+        .country-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .country-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .country-card p {
+            font-size: 1rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .country-flag {
+            width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .loading-wave {
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 20px;
+        }
+
+        .loading-bar {
+            width: 20px;
+            height: 10px;
+            margin: 0 5px;
+            background-color: #3498db;
+            border-radius: 5px;
+            animation: loading-wave-animation 1s ease-in-out infinite;
+        }
+
+        @keyframes loading-wave-animation {
+            0% {
+                height: 10px;
+            }
+
+            50% {
+                height: 50px;
+            }
+
+            100% {
+                height: 10px;
+            }
+        }
+
+        #error-container {
+            color: red;
+            border: 1px solid red;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #ffe0e0;
+            width: fit-content;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .skeleton-card {
+            background-color: #fff;
+            border-radius: 8px;
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .skeleton-flag {
+            width: 100%;
+            height: 150px;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .skeleton-title {
+            height: 24px;
+            width: 80%;
+            background-color: #ddd;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            width: 90%;
+            background-color: #eee;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Country Information</h1>
+        <div id="country-list-container">
+        </div>
+        <div id="loader" class="loading-wave" style="display: none;">
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+        </div>
+        <div id="error-container" style="display: none;"></div>
+    </div>
+    <script>
+        const API_BASE_URL = 'https://restcountries.com/v3.1/all';
+
+        const DOM = {
+            countryListContainer: document.getElementById('country-list-container'),
+            loader: document.getElementById('loader'),
+            errorContainer: document.getElementById('error-container'),
+        };
+
+        /**
+         * Function to show the loading indicator.
+         */
+        function showLoader() {
+            DOM.loader.style.display = 'flex';
+        }
+
+        /**
+         * Function to hide the loading indicator.
+         */
+        function hideLoader() {
+            DOM.loader.style.display = 'none';
+        }
+
+        /**
+         * Function to display an error message.
+         */
+        function displayErrorMessage(message) {
+            const errorContainer = DOM.errorContainer;
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+
+        /**
+         * Function to hide the error message.
+         */
+        function hideErrorMessage() {
+            DOM.errorContainer.style.display = 'none';
+            DOM.errorContainer.textContent = '';
+        }
+
+        /**
+         * Function to fetch all countries from the REST Countries API.
+         * @returns {Promise<Array<object>>} - A promise that resolves with an array of country data.
+         */
+        async function fetchCountries() {
+            const response = await fetch(API_BASE_URL);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch countries: ${response.status} - ${response.statusText}`);
+            }
+            return await response.json();
+        }
+
+        /**
+         * Function to display a country card in the UI.
+         * @param {object} country - The country data object.
+         */
+        function displayCountryCard(country) {
+            const card = document.createElement('div');
+            card.className = 'country-card';
+
+            const flag = document.createElement('img');
+            flag.src = country.flags.svg;
+            flag.alt = `${country.name.common} flag`;
+            flag.className = 'country-flag';
+
+            const name = document.createElement('h2');
+            name.textContent = country.name.common;
+
+            const population = document.createElement('p');
+            population.textContent = `Population: ${country.population.toLocaleString()}`;
+
+            const region = document.createElement('p');
+            region.textContent = `Region: ${country.region}`;
+
+            const capital = document.createElement('p');
+            capital.textContent = `Capital: ${country.capital ? country.capital[0] : 'N/A'}`;
+
+            card.appendChild(flag);
+            card.appendChild(name);
+            card.appendChild(population);
+            card.appendChild(region);
+            card.appendChild(capital);
+
+            DOM.countryListContainer.appendChild(card);
+        }
+
+        function displaySkeletonCards() {
+            DOM.countryListContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const card = document.createElement('div');
+                card.className = 'skeleton-card';
+
+                const flag = document.createElement('div');
+                flag.className = 'skeleton-flag';
+                const title = document.createElement('div');
+                title.className = 'skeleton-title';
+                const text1 = document.createElement('div');
+                text1.className = 'skeleton-text';
+                const text2 = document.createElement('div');
+                text2.className = 'skeleton-text';
+
+                card.appendChild(flag);
+                card.appendChild(title);
+                card.appendChild(text1);
+                card.appendChild(text2);
+
+                DOM.countryListContainer.appendChild(card);
+            }
+        }
+
+        /**
+         * Function to fetch and display all countries.
+         */
+        async function fetchAndDisplayCountries() {
+            showLoader();
+            displaySkeletonCards();
+            hideErrorMessage();
+
+            try {
+                const countries = await fetchCountries();
+                DOM.countryListContainer.innerHTML = '';
+                countries.forEach(displayCountryCard);
+            } catch (error) {
+                displayErrorMessage(error.message);
+                DOM.countryListContainer.innerHTML = `<p>Failed to retrieve countries.</p>`;
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Initial call to fetch and display countries
+        fetchAndDisplayCountries();
+    </script>
+</body>
+
+</html>
