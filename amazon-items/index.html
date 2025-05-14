@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Items Table</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        #filter-form {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+
+        #filter-form label {
+            margin-right: 5px;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        #filter-form input[type="text"],
+        #filter-form select {
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            width: 200px;
+            transition: border-color 0.3s ease;
+            font-size: 1rem;
+        }
+
+        #filter-form input[type="text"]:focus,
+        #filter-form select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        #search-button {
+            padding: 10px 20px;
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+        }
+
+        #search-button:hover {
+            background-color: #e67e22;
+        }
+
+        #data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #data-table thead th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #2980b9;
+        }
+
+        #data-table tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        #data-table td,
+        #data-table th {
+            border-bottom: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        #data-table tbody tr:hover {
+            background-color: #ecf0f1;
+        }
+
+        #data-table img {
+            width: 80px;
+            height: 80px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .star-rating {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            gap: 0.5em;
+        }
+
+        .star-rating input {
+            display: none;
+        }
+
+        .star-rating label {
+            cursor: pointer;
+            font-size: 2em;
+            color: #ddd;
+            transition: color 0.3s ease;
+        }
+
+        .star-rating label:hover,
+        .star-rating label:hover~label,
+        .star-rating input:checked~label {
+            color: #ffd700;
+        }
+
+        .delete-button {
+            padding: 5px 10px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        .loading-wave {
+            width: 100%;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 20px;
+        }
+
+        .loading-bar {
+            width: 20px;
+            height: 10px;
+            margin: 0 5px;
+            background-color: #3498db;
+            border-radius: 5px;
+            animation: loading-wave-animation 1s ease-in-out infinite;
+        }
+
+        @keyframes loading-wave-animation {
+            0% {
+                height: 10px;
+            }
+
+            50% {
+                height: 50px;
+            }
+
+            100% {
+                height: 10px;
+            }
+        }
+
+        #error-container {
+            color: red;
+            border: 1px solid red;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #ffe0e0;
+            width: fit-content;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .skeleton-row td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .skeleton-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-right: 10px;
+            background-color: #ddd;
+            animation: pulse 1.5s infinite;
+            display: inline-block;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            width: 80%;
+            background-color: #eee;
+            border-radius: 4px;
+            animation: pulse 1.5s infinite;
+            display: inline-block;
+        }
+
+        .skeleton-rating {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            gap: 0.5em;
+        }
+
+        .skeleton-rating label {
+            cursor: pointer;
+            font-size: 2em;
+            color: #ddd;
+            display: inline-block;
+            width: 1.1em;
+            height: 1.1em;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #data-table thead {
+                display: none;
+            }
+
+            #data-table td,
+            #data-table th {
+                display: block;
+                text-align: right;
+            }
+
+            #data-table td:before {
+                content: attr(data-column);
+                float: left;
+                font-weight: bold;
+            }
+
+            #filter-form {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #filter-form input[type="text"],
+            #filter-form select {
+                width: 100%;
+                max-width: 300px;
+                margin-bottom: 15px;
+            }
+
+            #search-button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Amazon Items</h1>
+        <form id="filter-form">
+            <label for="search-box">Search:</label>
+            <input type="text" id="search-box" placeholder="Enter product name">
+            <label for="category-select">Category:</label>
+            <select id="category-select">
+                <option value="">All</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Books">Books</option>
+                <option value="Home & Kitchen">Home & Kitchen</option>
+            </select>
+            <button id="search-button" type="button">Search</button>
+        </form>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Rating</th>
+                    <th>Price ($)</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div id="loader" class="loading-wave" style="display: none;">
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+            <div class="loading-bar"></div>
+        </div>
+        <div id="error-container" style="display: none;"></div>
+    </div>
+    <script>
+        const initialItems = [
+            {
+                id: 1,
+                name: "Laptop",
+                category: "Electronics",
+                rating: 4.5,
+                price: 1000,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 2,
+                name: "Book",
+                category: "Books",
+                rating: 4,
+                price: 20,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 3,
+                name: "Coffee Maker",
+                category: "Home & Kitchen",
+                rating: 3.5,
+                price: 100,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 4,
+                name: "Smartphone",
+                category: "Electronics",
+                rating: 4.8,
+                price: 800,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 5,
+                name: "Cookbook",
+                category: "Books",
+                rating: 4.2,
+                price: 25,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 6,
+                name: "Blender",
+                category: "Home & Kitchen",
+                rating: 4,
+                price: 150,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 7,
+                name: "Tablet",
+                category: "Electronics",
+                rating: 4.3,
+                price: 500,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 8,
+                name: "Novel",
+                category: "Books",
+                rating: 3.9,
+                price: 15,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 9,
+                name: "Toaster",
+                category: "Home & Kitchen",
+                rating: 3.7,
+                price: 50,
+                image: "https://via.placeholder.com/150",
+            },
+            {
+                id: 10,
+                name: "Headphones",
+                category: "Electronics",
+                rating: 4.6,
+                price: 300,
+                image: "https://via.placeholder.com/150",
+            },
+        ];
+
+        const DOM = {
+            searchBox: document.getElementById("search-box"),
+            categorySelect: document.getElementById("category-select"),
+            searchButton: document.getElementById("search-button"),
+            dataTable: document.getElementById("data-table").querySelector("tbody"),
+            loader: document.getElementById("loader"),
+            errorContainer: document.getElementById("error-container"),
+        };
+
+        /**
+         * Function to show the loading indicator.
+         */
+        function showLoader() {
+            DOM.loader.style.display = "flex";
+            DOM.dataTable.innerHTML = `
+                <tr class="skeleton-row">
+                    <td><span class="skeleton-image"></span></td>
+                    <td><span class="skeleton-text" style="width: 60%;"></span></td>
+                    <td><span class="skeleton-text" style="width: 20%;"></span></td>
+                    <td>
+                        <div class="skeleton-rating">
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                        </div>
+                    </td>
+                    <td><span class="skeleton-text" style="width: 40%;"></span></td>
+                    <td><span class="skeleton-text" style="width: 10%;"></span></td>
+                </tr>
+                 <tr class="skeleton-row">
+                    <td><span class="skeleton-image"></span></td>
+                    <td><span class="skeleton-text" style="width: 60%;"></span></td>
+                    <td><span class="skeleton-text" style="width: 20%;"></span></td>
+                    <td>
+                        <div class="skeleton-rating">
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                        </div>
+                    </td>
+                    <td><span class="skeleton-text" style="width: 40%;"></span></td>
+                    <td><span class="skeleton-text" style="width: 10%;"></span></td>
+                </tr>
+                 <tr class="skeleton-row">
+                    <td><span class="skeleton-image"></span></td>
+                    <td><span class="skeleton-text" style="width: 60%;"></span></td>
+                    <td><span class="skeleton-text" style="width: 20%;"></span></td>
+                    <td>
+                        <div class="skeleton-rating">
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                            <label></label>
+                        </div>
+                    </td>
+                    <td><span class="skeleton-text" style="width: 40%;"></span></td>
+                    <td><span class="skeleton-text" style="width: 10%;"></span></td>
+                </tr>
+            `;
+        }
+
+        /**
+         * Function to hide the loading indicator.
+         */
+        function hideLoader() {
+            DOM.loader.style.display = "none";
+        }
+
+        /**
+         * Function to display an error message.
+         */
+        function displayErrorMessage(message) {
+            const errorContainer = DOM.errorContainer;
+            errorContainer.textContent = message;
+            errorContainer.style.display = "block";
+        }
+
+        /**
+         * Function to hide the error message.
+         */
+        function hideErrorMessage() {
+            DOM.errorContainer.style.display = "none";
+            DOM.errorContainer.textContent = "";
+        }
+
+        /**
+         * Function to render the item list based on filters.
+         */
+        function renderItems() {
+            showLoader();
+            hideErrorMessage();
+
+            const searchTerm = DOM.searchBox.value.toLowerCase();
+            const selectedCategory = DOM.categorySelect.value;
+
+            const filteredItems = initialItems.filter((item) => {
+                const nameMatch = item.name.toLowerCase().includes(searchTerm);
+                const categoryMatch =
+                    !selectedCategory || item.category === selectedCategory;
+                return nameMatch && categoryMatch;
+            });
+
+            setTimeout(() => {
+                DOM.dataTable.innerHTML = "";
+                filteredItems.forEach((item) => {
+                    const row = document.createElement("tr");
+                    const ratingHTML = generateStarRating(item.rating);
+                    row.innerHTML = `
+                        <td><img src="${item.image}" alt="${item.name}"></td>
+                        <td>${item.name}</td>
+                        <td>${item.category}</td>
+                        <td>${ratingHTML}</td>
+                        <td>${item.price}</td>
+                        <td><button class="delete-button" data-id="${item.id}">Delete</button></td>
+                    `;
+                    DOM.dataTable.appendChild(row);
+                });
+
+                const deleteButtons =
+                    DOM.dataTable.querySelectorAll(".delete-button");
+                deleteButtons.forEach((button) => {
+                    button.addEventListener("click", handleDeleteItem);
+                });
+                hideLoader();
+            }, 500);
+        }
+
+        /**
+         * Function to generate the star rating HTML.
+         */
+        function generateStarRating(rating) {
+            const maxRating = 5;
+            const fullStars = Math.floor(rating);
+            const halfStar = rating - fullStars >= 0.5;
+            let html = '<div class="star-rating">';
+            for (let i = maxRating; i >= 1; i--) {
+                if (i > fullStars) {
+                    if (halfStar && i === fullStars + 1) {
+                        html += `<label style="color:#ffd700">&#9733;</label>`;
+                    } else {
+                        html += `<label>&#9734;</label>`;
+                    }
+                } else {
+                    html += `<label style="color:#ffd700">&#9733;</label>`;
+                }
+            }
+            html += '</div>';
+            return html;
+        }
+
+        /**
+         * Function to handle item deletion.
+         */
+        function handleDeleteItem(event) {
+            const itemId = parseInt(event.target.dataset.id);
+            const itemToDeleteIndex = initialItems.findIndex(
+                (item) => item.id === itemId
+            );
+
+            if (itemToDeleteIndex !== -1) {
+                initialItems.splice(itemToDeleteIndex, 1);
+                renderItems();
+            }
+        }
+
+        // Event listeners
+        DOM.searchButton.addEventListener("click", renderItems);
+
+        // Initial rendering
+        renderItems();
+    </script>
+</body>
+
+</html>
