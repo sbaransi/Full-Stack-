@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COVID-19 Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css@0.9.0/dist/charts.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center">COVID-19 Dashboard</h1>
+
+        <div id="error-container" style="display: none;"></div>
+
+        <div id="global-data-card" class="sk-loading">
+            <h2>Global COVID-19 Data</h2>
+            <p>New Confirmed: <span id="global-new-confirmed" class="sk-loading"></span></p>
+            <p>Total Confirmed: <span id="global-total-confirmed" class="sk-loading"></span></p>
+            <p>New Deaths: <span id="global-new-deaths" class="sk-loading"></span></p>
+            <p>Total Deaths: <span id="global-total-deaths" class="sk-loading"></span></p>
+            <p>New Recovered: <span id="global-new-recovered" class="sk-loading"></span></p>
+            <p>Total Recovered: <span id="global-total-recovered" class="sk-loading"></span></p>
+        </div>
+
+        <div id="country-data-table-container">
+            <table id="country-data-table" class="sk-loading">
+                <thead>
+                    <tr>
+                        <th>Country</th>
+                        <th>New Confirmed</th>
+                        <th>Total Confirmed</th>
+                        <th>New Deaths</th>
+                        <th>Total Deaths</th>
+                        <th>New Recovered</th>
+                        <th>Total Recovered</th>
+                        <th>Date</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                    </tr>
+                    <tr>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                        <td class="sk-loading"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="chart-container" class="sk-loading">
+            <h2>Top 10 Countries by New Confirmed Cases</h2>
+            <canvas id="top-cases-chart"></canvas>
+        </div>
+        <div style="display: flex;justify-content: center;">
+            <div id="loader" style="display: none;" class="loading-wave">
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./index.js"></script>
+</body>
+
+</html>

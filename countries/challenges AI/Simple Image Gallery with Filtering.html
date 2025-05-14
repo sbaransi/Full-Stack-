@@ -1,0 +1,141 @@
+<!-- Dynamic Image Data and Loading (Async/Await & Fetch): Fetch the image data (including URLs for thumbnails and full images, titles, tags) from a JSON API endpoint using async/await. 
+Display a loading indicator while the data is being fetched. Handle potential API errors with try...catch.
+Lazy Loading with Intersection Observer (Promises): Implement lazy loading for the thumbnails.
+ Use the Intersection Observer API to detect when a thumbnail is about to become visible in the viewport. 
+ When it does, create a Promise that resolves after a short delay (simulating image loading) and then set the src attribute of the image.
+Asynchronous Filtering (Async/Await): When the user filters images by tags, 
+simulate fetching the filtered image data from a (potentially different) API endpoint using async/await. 
+Display a loading state while the filtered data is being retrieved.
+Simulated Asynchronous Upload Preview (Promises): When a user selects an image for (simulated) upload, 
+use the FileReader API to read the image as a data URL. Wrap this in a Promise that resolves when the reading is complete. Display a preview of the image after the Promise resolves. -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Async Image Gallery</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .thumbnail-container {
+            cursor: pointer;
+        }
+
+        .thumbnail {
+            width: 100%;
+            height: auto;
+            display: block;
+            opacity: 0.5;
+            /* Indicate loading */
+        }
+
+        .thumbnail.loaded {
+            opacity: 1;
+        }
+
+        #large-image-container {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        #large-image {
+            max-width: 80%;
+            max-height: 500px;
+        }
+
+        #loading {
+            font-style: italic;
+            color: gray;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Async Image Gallery</h1>
+    <div id="gallery">
+        <p id="loading">Loading images...</p>
+    </div>
+    <div id="large-image-container">
+        <h2>Large Image</h2>
+        <img id="large-image" src="" alt="Large Image">
+    </div>
+
+    <script>
+        const gallery = document.getElementById('gallery');
+        const largeImageContainer = document.getElementById('large-image-container');
+        const largeImage = document.getElementById('large-image');
+        const loadingIndicator = document.getElementById('loading');
+
+        async function fetchImageData() {
+            try {
+                // Simulate fetching image data from an API
+                const response = await new Promise(resolve => setTimeout(() => {
+                    resolve([
+                        { thumb: 'images/thumb1.jpg', full: 'images/full1.jpg', title: 'Image 1' },
+                        { thumb: 'images/thumb2.jpg', full: 'images/full2.jpg', title: 'Image 2' },
+                        { thumb: 'images/thumb3.jpg', full: 'images/full3.jpg', title: 'Image 3' },
+                        // Add more simulated data
+                    ]);
+                }, 2000));
+                loadingIndicator.style.display = 'none';
+                return response;
+            } catch (error) {
+                console.error('Error fetching image data:', error);
+                loadingIndicator.textContent = 'Failed to load images.';
+                return [];
+            }
+        }
+
+        async function loadImage(imgElement, src) {
+            return new Promise((resolve, reject) => {
+                imgElement.onload = () => {
+                    imgElement.classList.add('loaded');
+                    resolve(imgElement);
+                };
+                imgElement.onerror = reject;
+                imgElement.src = src;
+            });
+        }
+
+        async function displayGallery() {
+            const imageData = await fetchImageData();
+            imageData.forEach(image => {
+                const thumbContainer = document.createElement('div');
+                thumbContainer.classList.add('thumbnail-container');
+                const thumbImg = document.createElement('img');
+                thumbImg.classList.add('thumbnail');
+                thumbContainer.appendChild(thumbImg);
+
+                thumbContainer.addEventListener('click', () => showLargeImage(image.full, image.title));
+                gallery.appendChild(thumbContainer);
+                loadImage(thumbImg, image.thumb); // Load thumbnails asynchronously
+            });
+        }
+
+        function showLargeImage(fullSrc, altText) {
+            largeImage.src = fullSrc;
+            largeImage.alt = altText;
+            largeImageContainer.style.display = 'block';
+        }
+
+        displayGallery();
+    </script>
+</body>
+
+</html>

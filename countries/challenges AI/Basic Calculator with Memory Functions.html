@@ -1,0 +1,155 @@
+<!-- Asynchronous Operations (Simulated with Promises): For complex calculations (e.g., square root, power),
+  simulate an asynchronous operation using Promises that resolve after a short delay to mimic a more computationally 
+  intensive task potentially happening on a server. Display a "processing" state during this simulated delay.
+Asynchronous History Logging (Async/Await - Simulated): Instead of immediately displaying calculation history,
+ simulate sending each calculation to a backend API to be logged using async/await. Only update the local history 
+ display after the simulated API call completes successfully.
+Error Handling with Asynchronous Fallback (Async/Await & Promises): If fetching a "calculation tip of the day" 
+from an external API fails (using async/await with try...catch), implement a fallback mechanism using a Promise
+ that resolves with a default tip after a longer delay. Display whichever tip resolves first. -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Async Calculator</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #calculator {
+            width: 300px;
+            border: 1px solid #ccc;
+            padding: 15px;
+        }
+
+        #display {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.5em;
+            text-align: right;
+            margin-bottom: 10px;
+            border: 1px solid #eee;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        #processing {
+            font-style: italic;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="calculator">
+        <input type="text" id="display" value="0" readonly>
+        <p id="processing" style="display: none;">Processing...</p>
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="appendOperator('/')">/</button>
+            <button onclick="appendOperator('*')">*</button>
+            <button onclick="appendOperator('-')">-</button>
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button onclick="appendOperator('+')">+</button>
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button onclick="calculate()">=</button>
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button onclick="appendDecimal()">.</button>
+            <button onclick="appendNumber('0')">0</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        const processingIndicator = document.getElementById('processing');
+        let currentInput = '';
+        let operator = null;
+        let previousValue = null;
+
+        function appendNumber(number) {
+            if (currentInput === '0' || currentInput === null) {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+            display.value = currentInput;
+        }
+
+        function appendOperator(op) {
+            if (currentInput !== '' || previousValue !== null) {
+                if (previousValue !== null) {
+                    calculate();
+                }
+                previousValue = parseFloat(currentInput);
+                operator = op;
+                currentInput = '';
+            }
+        }
+
+        function appendDecimal() {
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+                display.value = currentInput;
+            }
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            operator = null;
+            previousValue = null;
+            display.value = currentInput;
+        }
+
+        function simulateAsyncCalculation(val1, op, val2) {
+            return new Promise(resolve => {
+                processingIndicator.style.display = 'inline';
+                setTimeout(() => {
+                    processingIndicator.style.display = 'none';
+                    let result;
+                    switch (op) {
+                        case '+': result = val1 + val2; break;
+                        case '-': result = val1 - val2; break;
+                        case '*': result = val1 * val2; break;
+                        case '/': result = val2 === 0 ? 'Error: Division by zero' : val1 / val2; break;
+                        default: return null;
+                    }
+                    resolve(result);
+                }, 1200); // Simulate calculation delay
+            });
+        }
+
+        async function calculate() {
+            if (previousValue !== null && operator && currentInput !== '') {
+                const currentValue = parseFloat(currentInput);
+                const result = await simulateAsyncCalculation(previousValue, operator, currentValue);
+                display.value = result;
+                currentInput = String(result);
+                operator = null;
+                previousValue = null;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #quiz-container {
+            margin-top: 20px;
+        }
+
+        .answer-btn {
+            margin-right: 10px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+
+        #score {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Quiz Time!</h1>
+    <div id="quiz-container">
+        <div id="question-container"></div>
+        <div id="answer-buttons"></div>
+        <button id="next-button" style="display: none;">Next</button>
+        <div id="score"></div>
+    </div>
+
+    <script>
+        const questionContainer = document.getElementById('question-container');
+        const answerButtons = document.getElementById('answer-buttons');
+        const nextButton = document.getElementById('next-button');
+        const scoreDisplay = document.getElementById('score');
+        const quizApiUrl = 'https://opentdb.com/api.php?amount=5&type=multiple';
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questions = [];
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch(quizApiUrl);
+                const data = await response.json();
+                questions = data.results;
+                startQuiz();
+            } catch (error) {
+                questionContainer.textContent = 'Failed to load questions.';
+                console.error(error);
+            }
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            nextButton.style.display = 'none';
+            scoreDisplay.textContent = `Score: ${score}`;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetAnswerButtons();
+            const currentQuestion = questions[currentQuestionIndex];
+            questionContainer.textContent = currentQuestion.question;
+
+            const answers = [...currentQuestion.incorrect_answers, currentQuestion.correct_answer].sort(() => Math.random() - 0.5);
+
+            answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.textContent = answer;
+                button.classList.add('answer-btn');
+                button.addEventListener('click', () => selectAnswer(answer === currentQuestion.correct_answer));
+                answerButtons.appendChild(button);
+            });
+        }
+
+        function resetAnswerButtons() {
+            answerButtons.innerHTML = '';
+        }
+
+        function selectAnswer(isCorrect) {
+            if (isCorrect) {
+                score++;
+            }
+            scoreDisplay.textContent = `Score: ${score}`;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                setTimeout(showQuestion, 1000);
+            } else {
+                questionContainer.textContent = `Quiz Finished! Your final score is ${score}/${questions.length}`;
+                answerButtons.innerHTML = '';
+            }
+            nextButton.style.display = 'none';
+        }
+
+        fetchQuestions();
+    </script>
+</body>
+
+</html>

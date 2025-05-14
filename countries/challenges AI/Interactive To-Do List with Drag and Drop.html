@@ -1,0 +1,153 @@
+<!-- Remote Task Fetching (Async/Await): Instead of starting with an empty list, fetch initial to-do items from a mock online API endpoint using async/await. Handle loading states and potential errors with try...catch.
+Asynchronous Task Creation (Promises): When a new task is added, simulate sending it to a server using a Promise that resolves after a short delay. Only add the task to the local UI after the Promise resolves successfully.
+Asynchronous Task Completion/Deletion (Promise.all): When multiple tasks are marked as complete or deleted, simulate sending these updates to a server using individual Promises. Use Promise.all to wait for all these simulated server operations to complete before updating the UI to reflect the changes.
+Optimistic Updates with Rollback (Async/Await & Promises): Implement optimistic updates. When a task is marked complete/deleted, update the UI immediately. In the background, send the update to a simulated server (Promise). If the server operation fails (Promise rejection), implement a rollback mechanism to revert the UI to its previous state. -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Async To-Do List</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #todo-container {
+            margin-top: 20px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .todo-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .todo-item span {
+            flex-grow: 1;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .delete-btn {
+            margin-left: 10px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: red;
+            font-weight: bold;
+        }
+
+        #loading {
+            font-style: italic;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Async To-Do List</h1>
+    <div>
+        <input type="text" id="new-task" placeholder="Add new task">
+        <button id="add-task">Add</button>
+        <p id="loading" style="display: none;">Loading...</p>
+    </div>
+    <div id="todo-container">
+    </div>
+
+    <script>
+        const newTaskInput = document.getElementById('new-task');
+        const addTaskButton = document.getElementById('add-task');
+        const todoContainer = document.getElementById('todo-container');
+        const loadingIndicator = document.getElementById('loading');
+
+        async function fetchInitialTasks() {
+            loadingIndicator.style.display = 'block';
+            try {
+                // Simulate API call
+                const response = await new Promise(resolve => setTimeout(() => {
+                    resolve([{ id: 1, text: 'Buy groceries', completed: false }, { id: 2, text: 'Walk the dog', completed: true }]);
+                }, 1500));
+                response.forEach(taskData => addTaskToUI(taskData.text, taskData.completed));
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        function simulateAddTaskToServer(taskText) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const newTaskId = Date.now(); // Simulate ID generation
+                    resolve({ id: newTaskId, text: taskText, completed: false });
+                }, 1000);
+            });
+        }
+
+        function addTaskToUI(taskText, completed = false) {
+            const todoItem = document.createElement('div');
+            todoItem.classList.add('todo-item');
+            todoItem.innerHTML = `
+                <input type="checkbox" ${completed ? 'checked' : ''}>
+                <span>${taskText}</span>
+                <button class="delete-btn">x</button>
+            `;
+
+            const checkbox = todoItem.querySelector('input[type="checkbox"]');
+            const taskSpan = todoItem.querySelector('span');
+            const deleteButton = todoItem.querySelector('.delete-btn');
+
+            if (completed) {
+                taskSpan.classList.add('completed');
+            }
+
+            checkbox.addEventListener('change', function () {
+                taskSpan.classList.toggle('completed', this.checked);
+                // Simulate asynchronous update to server (not fully implemented here for brevity)
+            });
+
+            deleteButton.addEventListener('click', function () {
+                // Simulate asynchronous deletion from server (not fully implemented here for brevity)
+                todoContainer.removeChild(todoItem);
+            });
+
+            todoContainer.appendChild(todoItem);
+            newTaskInput.value = '';
+        }
+
+        addTaskButton.addEventListener('click', async () => {
+            const taskText = newTaskInput.value.trim();
+            if (taskText) {
+                loadingIndicator.style.display = 'block';
+                try {
+                    const newTask = await simulateAddTaskToServer(taskText);
+                    addTaskToUI(newTask.text, newTask.completed);
+                } catch (error) {
+                    console.error('Error adding task:', error);
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+        });
+
+        newTaskInput.addEventListener('keypress', async function (event) {
+            if (event.key === 'Enter') {
+                addTaskButton.click();
+            }
+        });
+
+        fetchInitialTasks();
+    </script>
+</body>
+
+</html>

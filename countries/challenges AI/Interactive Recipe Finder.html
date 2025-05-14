@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Finder</title>
+    <style>
+        body {
+            font - family: sans-serif;
+            margin: 20px;
+        }
+
+        #results {
+            margin - top: 20px;
+        }
+
+        .recipe-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .recipe-item img {
+            max - width: 100px;
+            height: auto;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Recipe Finder</h1>
+    <div>
+        <label for="ingredientInput">Enter Ingredients:</label>
+        <input type="text" id="ingredientInput" placeholder="e.g., chicken, pasta">
+        <button id="searchButton">Search Recipes</button>
+    </div>
+    <div id="results"></div>
+
+    <script>
+        const ingredientInput = document.getElementById('ingredientInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsContainer = document.getElementById('results');
+        const apiKey = 'YOUR_SPOONACULAR_API_KEY'; // Replace with your actual API key
+
+        searchButton.addEventListener('click', async () => {
+            const ingredients = ingredientInput.value.trim();
+            if (ingredients) {
+                const apiUrl = `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&apiKey=${apiKey}`;
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    resultsContainer.innerHTML = '';
+                    if (data && data.length > 0) {
+                        data.forEach(recipe => {
+                            const recipeDiv = document.createElement('div');
+                            recipeDiv.classList.add('recipe-item');
+                            recipeDiv.innerHTML = `
+                                <img src="${recipe.image}" alt="${recipe.title}">
+                                <h3>${recipe.title}</h3>
+                                <a href="https://spoonacular.com/${recipe.id}" target="_blank">View Recipe</a>
+                            `;
+                            resultsContainer.appendChild(recipeDiv);
+                        });
+                    } else {
+                        resultsContainer.textContent = 'No recipes found for those ingredients.';
+                    }
+                } catch (error) {
+                    resultsContainer.textContent = 'Error fetching recipes.';
+                    console.error(error);
+                }
+            } else {
+                resultsContainer.textContent = 'Please enter some ingredients.';
+            }
+        });
+    </script>
+</body>
+
+</html>

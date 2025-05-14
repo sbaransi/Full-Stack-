@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countries App</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        #country-select {
+            width: 300px;
+            margin-bottom: 10px;
+        }
+
+        #country-info {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        #country-flag {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+
+        canvas {
+            max-width: 400px;
+            max-height: 400px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>Countries Information</h1>
+    <select id="country-select">
+        <option value="" disabled selected>Select a Country</option>
+    </select>
+    <div id="country-info" style="display: none;">
+        <h2>Country Information</h2>
+        <img id="country-flag" src="" alt="Country Flag">
+        <p id="country-name"></p>
+    </div>
+    <div class="chart-container">
+        <div>
+            <h2>Countries per Region</h2>
+            <canvas id="region-chart"></canvas>
+        </div>
+        <div>
+            <h2>Population per Region</h2>
+            <canvas id="population-chart"></canvas>
+        </div>
+    </div>
+    <div id="max-borders" style="margin-top: 30px;">
+        <h2>Countries with Maximum Borders</h2>
+        <ul id="max-borders-list"></ul>
+    </div>
+
+    <script>
+        const countrySelect = document.getElementById('country-select');
+        const countryInfoDiv = document.getElementById('country-info');
+        const countryFlagImg = document.getElementById('country-flag');
+        const countryNameP = document.getElementById('country-name');
+        const regionChartCanvas = document.getElementById('region-chart').getContext('2d');
+        const populationChartCanvas = document.getElementById('population-chart').getContext('2d');
+        const maxBordersList = document.getElementById('max-borders-list');
+
+        let allCountriesData = [];
+
+        async function getAllCountries() {
+            try {
+                const response = await fetch('https://restcountries.com/v3.1/all');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                allCountriesData = await response.json();
+                console.log(allCountriesData)
+                populateCountryDropdown(allCountriesData);
+                renderRegionChart(allCountriesData);
+                renderPopulationChart(allCountriesData);
+                findCountriesWithMaxBorders(allCountriesData);
+            } catch (error) {
+                console.error("Error fetching all countries:", error);
+            }
+        }
+
+        function populateCountryDropdown(countries) {
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.cca3; // Use a unique code for API call
+                option.textContent = country.name.common;
+                countrySelect.appendChild(option);
+            });
+        }
+
+        countrySelect.addEventListener('change', async () => {
+            const countryCode = countrySelect.value;
+            if (countryCode) {
+                try {
+                    const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        const country = data[0];
+                        countryFlagImg.src = country.flags.png;
+                        countryFlagImg.alt = `${country.name.common} Flag`;
+                        countryNameP.textContent = `Name: ${country.name.common}`;
+                        countryInfoDiv.style.display = 'block';
+
+                    } else {
+                        countryInfoDiv.style.display = 'none';
+                        alert('Country data not found.');
+                    }
+                } catch (error) {
+                    console.error("Error fetching country by code:", error);
+                    countryInfoDiv.style.display = 'none';
+                    alert('Failed to fetch country data.');
+                }
+            } else {
+                countryInfoDiv.style.display = 'none';
+            }
+        });
+
+        function renderRegionChart(countries) {
+            console.log(countries)
+            const regionCounts = {};
+            countries.forEach(country => {
+                const region = country.region || 'Unknown Region';
+                regionCounts[region] = (regionCounts[region] || 0) + 1;
+            });
+
+            new Chart(regionChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(regionCounts),
+                    datasets: [{
+                        data: Object.values(regionCounts),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(128, 0, 128, 0.8)', // Purple
+                            'rgba(0, 128, 0, 0.8)',   // Green
+                            'rgba(0, 128, 128, 0.8)', // Teal
+                            'rgba(139, 69, 19, 0.8)'  // Brown
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Number of Countries per Region'
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderPopulationChart(countries) {
+            console.log(countries)
+            const regionPopulations = {};
+            countries.forEach(country => {
+                const region = country.region || 'Unknown Region';
+                regionPopulations[region] = (regionPopulations[region] || 0) + (country.population || 0);
+            });
+
+            new Chart(populationChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(regionPopulations),
+                    datasets: [{
+                        data: Object.values(regionPopulations),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 206, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)',
+                            'rgba(255, 159, 64, 0.8)',
+                            'rgba(128, 0, 128, 0.8)', // Purple
+                            'rgba(0, 128, 0, 0.8)',   // Green
+                            'rgba(0, 128, 128, 0.8)', // Teal
+                            'rgba(139, 69, 19, 0.8)'  // Brown
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Population per Region'
+                        }
+                    }
+                }
+            });
+        }
+
+        function findCountriesWithMaxBorders(countries) {
+            console.log(countries)
+            const borderCounts = {};
+            countries.forEach(country => {
+                console.log(country.name.common)
+                console.log(country.borders)
+
+                if (country.borders) { borderCounts[country.name.common] = country.borders.length; }
+                else { borderCounts[country.name.common] = 0 }
+
+                console.log(borderCounts)
+            });
+
+            let maxBorderCount = 0;
+            const countriesWithMax = {};
+
+            for (const countryName in borderCounts) {
+                if (borderCounts[countryName] > maxBorderCount) {
+                    maxBorderCount = borderCounts[countryName];
+                    countriesWithMax = { [countryName]: maxBorderCount };
+                } else if (borderCounts[countryName] === maxBorderCount) {
+                    countriesWithMax[countryName] = maxBorderCount;
+                }
+            }
+
+            for (const countryName in countriesWithMax) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${countryName}: ${countriesWithMax[countryName]}`;
+                maxBordersList.appendChild(listItem);
+            }
+        }
+
+        getAllCountries();
+    </script>
+</body>
+
+</html>
